@@ -48,25 +48,34 @@ def get_movie_details_from_tmdb(movie_title):
 def get_imdb_rating(imdb_id):
     """
     Gets the rating for a movie from IMDb using its IMDb ID.
-
-    Args:
-        imdb_id (str): The IMDb ID of the movie (e.g., 'tt0133093').
-
-    Returns:
-        float: The IMDb rating, or None if not found.
     """
     if not imdb_id:
         return None
     try:
-        # IMDb IDs are passed without the 'tt' prefix to get_movie
+        print(f"[DEBUG] Looking up IMDb ID: {imdb_id}")
         movie_id_digits = imdb_id.replace('tt', '')
         movie = ia.get_movie(movie_id_digits)
+
         if movie:
-            # Explicitly fetch the main data, which includes the rating
+            print(f"[DEBUG] Found movie object: {movie}")
+            print(f"[DEBUG] Movie keys before update: {movie.keys()}")
+
+            print("[DEBUG] Updating movie details from IMDb...")
             ia.update(movie)
-            return movie.get('rating')
+            print("[DEBUG] Update complete.")
+
+            print(f"[DEBUG] Movie keys after update: {movie.keys()}")
+            rating = movie.get('rating')
+            print(f"[DEBUG] Rating found: {rating}")
+            return rating
+        else:
+            print("[DEBUG] ia.get_movie() returned None.")
+
     except IMDbError as e:
-        print(f"Error fetching from IMDb: {e}")
+        print(f"[DEBUG] An IMDbError occurred: {e}")
+    except Exception as e:
+        print(f"[DEBUG] An unexpected error occurred: {e}")
+
     return None
 
 def get_rotten_tomatoes_rating(movie_title):
@@ -74,5 +83,4 @@ def get_rotten_tomatoes_rating(movie_title):
     Gets the rating for a movie from Rotten Tomatoes.
     NOTE: This feature is currently disabled due to website scraping blocks.
     """
-    # print("Rotten Tomatoes lookup is currently unavailable.")
     return "Unavailable"
