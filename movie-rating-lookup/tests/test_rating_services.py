@@ -6,7 +6,6 @@ import os
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-# The import for get_tmdb_rating is no longer needed
 from rating_services import get_movie_details_from_tmdb, get_imdb_rating, get_rotten_tomatoes_rating
 
 class TestRatingServices(unittest.TestCase):
@@ -56,13 +55,17 @@ class TestRatingServices(unittest.TestCase):
         # Mock the IMDb API response
         mock_movie = Mock()
         mock_movie.get.return_value = 8.7
-        mock_imdb_instance.get_movie.return_value = mock_movie
 
-        # Pass the IMDb ID without the 'tt' prefix, as the function handles it
+        # Configure the mock for both get_movie and update
+        mock_imdb_instance.get_movie.return_value = mock_movie
+        mock_imdb_instance.update.return_value = None # update doesn't return anything
+
         rating = get_imdb_rating("tt0133093")
 
         self.assertEqual(rating, 8.7)
         mock_imdb_instance.get_movie.assert_called_with('0133093')
+        # Assert that update was called on the movie object
+        mock_imdb_instance.update.assert_called_with(mock_movie)
 
     def test_get_rotten_tomatoes_rating(self):
         # Test that the function returns the "Unavailable" message

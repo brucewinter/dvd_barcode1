@@ -62,6 +62,8 @@ def get_imdb_rating(imdb_id):
         movie_id_digits = imdb_id.replace('tt', '')
         movie = ia.get_movie(movie_id_digits)
         if movie:
+            # Explicitly fetch the main data, which includes the rating
+            ia.update(movie)
             return movie.get('rating')
     except IMDbError as e:
         print(f"Error fetching from IMDb: {e}")
