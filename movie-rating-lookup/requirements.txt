@@ -1,0 +1,4 @@
+requests
+tmdbv3api
+beautifulsoup4
+imdbpy
