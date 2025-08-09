@@ -1,13 +1,13 @@
 import argparse
 from movie_lookup import get_movie_title_from_barcode
-from rating_services import get_movie_details_from_tmdb, get_imdb_rating, get_rotten_tomatoes_rating
+from rating_services import get_tmdb_rating
 from utils import clean_movie_title
 
 def main():
     """
-    Main function to get movie ratings from a barcode.
+    Main function to get a movie rating from a barcode.
     """
-    parser = argparse.ArgumentParser(description="Look up movie ratings from a barcode.")
+    parser = argparse.ArgumentParser(description="Look up a movie rating from a barcode.")
     parser.add_argument("barcode", help="The UPC barcode of the DVD.")
     args = parser.parse_args()
 
@@ -25,24 +25,16 @@ def main():
     print(f"Cleaned title for searching: {cleaned_title}")
     print("-" * 20)
 
-    print("Fetching ratings...")
+    print("Fetching rating from TMDB...")
 
-    tmdb_details = get_movie_details_from_tmdb(cleaned_title)
+    tmdb_rating = get_tmdb_rating(cleaned_title)
 
-    tmdb_rating = None
-    imdb_id = None
-    if tmdb_details:
-        tmdb_rating = tmdb_details.get('tmdb_rating')
-        imdb_id = tmdb_details.get('imdb_id')
-
-    imdb_rating = get_imdb_rating(imdb_id)
-    rt_rating = get_rotten_tomatoes_rating(cleaned_title)
-
-    print("\n--- Ratings ---")
-    print(f"TMDb: {tmdb_rating if tmdb_rating else 'Not found'}")
-    print(f"IMDb: {imdb_rating if imdb_rating else 'Not found'}")
-    print(f"Rotten Tomatoes: {rt_rating}")
-    print("---------------")
+    print("\n--- Rating ---")
+    if tmdb_rating:
+        print(f"TMDb Rating: {tmdb_rating} / 10")
+    else:
+        print("TMDb Rating: Not found")
+    print("--------------")
 
 if __name__ == "__main__":
     main()
