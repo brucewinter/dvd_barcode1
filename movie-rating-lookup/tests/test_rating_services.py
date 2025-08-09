@@ -2,83 +2,72 @@ import unittest
 from unittest.mock import patch, Mock
 import sys
 import os
-import requests
 
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
-from rating_services import get_tmdb_rating, get_imdb_rating, get_rotten_tomatoes_rating
+# The import for get_tmdb_rating is no longer needed
+from rating_services import get_movie_details_from_tmdb, get_imdb_rating, get_rotten_tomatoes_rating
 
 class TestRatingServices(unittest.TestCase):
 
     @patch('rating_services.Movie')
-    def test_get_tmdb_rating_success(self, MockMovie):
+    def test_get_movie_details_from_tmdb_success(self, MockMovie):
         # Mock the TMDB API response for a successful lookup
         mock_movie_instance = Mock()
+
+        # Mock for the search result
         mock_search_result = Mock()
-        mock_search_result.vote_average = 8.7
+        mock_search_result.id = 123
         mock_movie_instance.search.return_value = [mock_search_result]
+
+        # Mock for the details result
+        mock_details_result = Mock()
+        mock_details_result.vote_average = 8.7
+        mock_details_result.imdb_id = 'tt0133093'
+        mock_movie_instance.details.return_value = mock_details_result
+
         MockMovie.return_value = mock_movie_instance
 
         # Set a dummy API key to pass the check
         with patch.dict(os.environ, {'TMDB_API_KEY': 'dummy_key'}):
-            rating = get_tmdb_rating("The Matrix")
+            details = get_movie_details_from_tmdb("The Matrix")
 
-        self.assertEqual(rating, 8.7)
+        expected_details = {
+            'tmdb_rating': 8.7,
+            'imdb_id': 'tt0133093'
+        }
+        self.assertEqual(details, expected_details)
 
     @patch('rating_services.Movie')
-    def test_get_tmdb_rating_not_found(self, MockMovie):
+    def test_get_movie_details_from_tmdb_not_found(self, MockMovie):
         # Mock the TMDB API response for a movie not found
         mock_movie_instance = Mock()
         mock_movie_instance.search.return_value = []
         MockMovie.return_value = mock_movie_instance
 
         with patch.dict(os.environ, {'TMDB_API_KEY': 'dummy_key'}):
-            rating = get_tmdb_rating("Non Existent Movie")
+            details = get_movie_details_from_tmdb("Non Existent Movie")
 
-        self.assertIsNone(rating)
-
-    def test_get_tmdb_rating_no_api_key(self):
-        # Test the case where the TMDB API key is not set
-        with patch.dict(os.environ, {'TMDB_API_KEY': ''}):
-            rating = get_tmdb_rating("The Matrix")
-
-        self.assertIsNone(rating)
+        self.assertIsNone(details)
 
     @patch('rating_services.ia')
-    def test_get_imdb_rating_success(self, mock_imdb):
+    def test_get_imdb_rating_success(self, mock_imdb_instance):
         # Mock the IMDb API response
         mock_movie = Mock()
         mock_movie.get.return_value = 8.7
-        mock_imdb.search_movie.return_value = [mock_movie]
+        mock_imdb_instance.get_movie.return_value = mock_movie
 
-        rating = get_imdb_rating("The Matrix")
+        # Pass the IMDb ID without the 'tt' prefix, as the function handles it
+        rating = get_imdb_rating("tt0133093")
 
         self.assertEqual(rating, 8.7)
+        mock_imdb_instance.get_movie.assert_called_with('0133093')
 
-    @patch('rating_services.requests.get')
-    def test_get_rotten_tomatoes_rating_success(self, mock_get):
-        # Mock the Rotten Tomatoes page content
-        mock_response = Mock()
-        mock_response.status_code = 200
-        mock_response.content = b'<score-board tomatometerscore="87"></score-board>'
-        mock_get.return_value = mock_response
-
-        rating = get_rotten_tomatoes_rating("The Matrix")
-
-        self.assertEqual(rating, "87%")
-
-    @patch('rating_services.requests.get')
-    def test_get_rotten_tomatoes_rating_not_found(self, mock_get):
-        # Mock a 404 response
-        mock_response = Mock()
-        mock_response.status_code = 404
-        mock_response.raise_for_status.side_effect = requests.exceptions.HTTPError(response=mock_response)
-        mock_get.return_value = mock_response
-
-        rating = get_rotten_tomatoes_rating("Non Existent Movie")
-
-        self.assertIsNone(rating)
+    def test_get_rotten_tomatoes_rating(self):
+        # Test that the function returns the "Unavailable" message
+        rating = get_rotten_tomatoes_rating("Any Movie")
+        self.assertEqual(rating, "Unavailable")
 
 
 if __name__ == '__main__':

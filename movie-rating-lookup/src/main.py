@@ -1,6 +1,6 @@
 import argparse
 from movie_lookup import get_movie_title_from_barcode
-from rating_services import get_tmdb_rating, get_imdb_rating, get_rotten_tomatoes_rating
+from rating_services import get_movie_details_from_tmdb, get_imdb_rating, get_rotten_tomatoes_rating
 from utils import clean_movie_title
 
 def main():
@@ -26,14 +26,22 @@ def main():
     print("-" * 20)
 
     print("Fetching ratings...")
-    tmdb_rating = get_tmdb_rating(cleaned_title)
-    imdb_rating = get_imdb_rating(cleaned_title)
+
+    tmdb_details = get_movie_details_from_tmdb(cleaned_title)
+
+    tmdb_rating = None
+    imdb_id = None
+    if tmdb_details:
+        tmdb_rating = tmdb_details.get('tmdb_rating')
+        imdb_id = tmdb_details.get('imdb_id')
+
+    imdb_rating = get_imdb_rating(imdb_id)
     rt_rating = get_rotten_tomatoes_rating(cleaned_title)
 
     print("\n--- Ratings ---")
     print(f"TMDb: {tmdb_rating if tmdb_rating else 'Not found'}")
     print(f"IMDb: {imdb_rating if imdb_rating else 'Not found'}")
-    print(f"Rotten Tomatoes: {rt_rating if rt_rating else 'Not found'}")
+    print(f"Rotten Tomatoes: {rt_rating}")
     print("---------------")
 
 if __name__ == "__main__":

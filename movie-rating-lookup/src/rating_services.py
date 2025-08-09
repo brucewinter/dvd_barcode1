@@ -17,15 +17,15 @@ if not tmdb.api_key:
 # Initialize IMDb
 ia = IMDb()
 
-def get_tmdb_rating(movie_title):
+def get_movie_details_from_tmdb(movie_title):
     """
-    Gets the rating for a movie from The Movie Database (TMDb).
+    Gets movie details (TMDB rating and IMDb ID) from The Movie Database.
 
     Args:
         movie_title (str): The title of the movie to look up.
 
     Returns:
-        float: The TMDb rating, or None if not found.
+        dict: A dictionary with 'tmdb_rating' and 'imdb_id', or None.
     """
     if not tmdb.api_key:
         return None
@@ -33,30 +33,35 @@ def get_tmdb_rating(movie_title):
         movie = Movie()
         search = movie.search(movie_title)
 
-        # The search result is an iterator. Get the first result.
         first_result = next(iter(search), None)
 
         if first_result:
-            return first_result.vote_average
+            details = movie.details(first_result.id)
+            return {
+                'tmdb_rating': details.vote_average,
+                'imdb_id': details.imdb_id
+            }
     except TMDbException as e:
         print(f"Error fetching from TMDb: {e}")
     return None
 
-def get_imdb_rating(movie_title):
+def get_imdb_rating(imdb_id):
     """
-    Gets the rating for a movie from IMDb.
+    Gets the rating for a movie from IMDb using its IMDb ID.
 
     Args:
-        movie_title (str): The title of the movie to look up.
+        imdb_id (str): The IMDb ID of the movie (e.g., 'tt0133093').
 
     Returns:
         float: The IMDb rating, or None if not found.
     """
+    if not imdb_id:
+        return None
     try:
-        movies = ia.search_movie(movie_title)
-        if movies:
-            movie = movies[0]
-            ia.update(movie)
+        # IMDb IDs are passed without the 'tt' prefix to get_movie
+        movie_id_digits = imdb_id.replace('tt', '')
+        movie = ia.get_movie(movie_id_digits)
+        if movie:
             return movie.get('rating')
     except IMDbError as e:
         print(f"Error fetching from IMDb: {e}")
@@ -64,35 +69,8 @@ def get_imdb_rating(movie_title):
 
 def get_rotten_tomatoes_rating(movie_title):
     """
-    Gets the rating for a movie from Rotten Tomatoes by scraping.
-
-    Args:
-        movie_title (str): The title of the movie to look up.
-
-    Returns:
-        str: The Rotten Tomatoes rating (e.g., "95%"), or None if not found.
+    Gets the rating for a movie from Rotten Tomatoes.
+    NOTE: This feature is currently disabled due to website scraping blocks.
     """
-    try:
-        # Format movie title for URL, removing special characters
-        formatted_title = ''.join(c for c in movie_title if c.isalnum() or c.isspace()).lower().replace(' ', '_')
-        url = f"https://www.rottentomatoes.com/m/{formatted_title}"
-
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
-        }
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.content, 'html.parser')
-
-        score_element = soup.find('score-board')
-        if score_element and score_element.attrs.get('tomatometerscore'):
-            return score_element.attrs.get('tomatometerscore') + '%'
-
-    except requests.exceptions.RequestException as e:
-        # It's common for this to fail if the movie title doesn't map perfectly to a URL
-        # So we don't print an error unless it's a non-404 error.
-        if e.response and e.response.status_code != 404:
-             print(f"Error fetching Rotten Tomatoes page for '{movie_title}': {e}")
-
-    return None
+    # print("Rotten Tomatoes lookup is currently unavailable.")
+    return "Unavailable"
