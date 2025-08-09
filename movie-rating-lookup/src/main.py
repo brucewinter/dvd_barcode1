@@ -1,6 +1,7 @@
 import argparse
 from movie_lookup import get_movie_title_from_barcode
 from rating_services import get_tmdb_rating, get_imdb_rating, get_rotten_tomatoes_rating
+from utils import clean_movie_title
 
 def main():
     """
@@ -11,19 +12,23 @@ def main():
     args = parser.parse_args()
 
     print(f"Looking up movie for barcode: {args.barcode}")
-    movie_title = get_movie_title_from_barcode(args.barcode)
+    raw_movie_title = get_movie_title_from_barcode(args.barcode)
 
-    if not movie_title:
+    if not raw_movie_title:
         print("Could not find a movie for this barcode.")
         return
 
-    print(f"Found movie: {movie_title}")
+    print(f"Found movie title: {raw_movie_title}")
+
+    # Clean the title to improve search results
+    cleaned_title = clean_movie_title(raw_movie_title)
+    print(f"Cleaned title for searching: {cleaned_title}")
     print("-" * 20)
 
     print("Fetching ratings...")
-    tmdb_rating = get_tmdb_rating(movie_title)
-    imdb_rating = get_imdb_rating(movie_title)
-    rt_rating = get_rotten_tomatoes_rating(movie_title)
+    tmdb_rating = get_tmdb_rating(cleaned_title)
+    imdb_rating = get_imdb_rating(cleaned_title)
+    rt_rating = get_rotten_tomatoes_rating(cleaned_title)
 
     print("\n--- Ratings ---")
     print(f"TMDb: {tmdb_rating if tmdb_rating else 'Not found'}")
