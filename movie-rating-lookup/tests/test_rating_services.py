@@ -13,7 +13,7 @@ class TestRatingServices(unittest.TestCase):
 
     @patch('rating_services.Movie')
     def test_get_tmdb_rating_success(self, MockMovie):
-        # Mock the TMDB API response
+        # Mock the TMDB API response for a successful lookup
         mock_movie_instance = Mock()
         mock_search_result = Mock()
         mock_search_result.vote_average = 8.7
@@ -25,6 +25,25 @@ class TestRatingServices(unittest.TestCase):
             rating = get_tmdb_rating("The Matrix")
 
         self.assertEqual(rating, 8.7)
+
+    @patch('rating_services.Movie')
+    def test_get_tmdb_rating_not_found(self, MockMovie):
+        # Mock the TMDB API response for a movie not found
+        mock_movie_instance = Mock()
+        mock_movie_instance.search.return_value = []
+        MockMovie.return_value = mock_movie_instance
+
+        with patch.dict(os.environ, {'TMDB_API_KEY': 'dummy_key'}):
+            rating = get_tmdb_rating("Non Existent Movie")
+
+        self.assertIsNone(rating)
+
+    def test_get_tmdb_rating_no_api_key(self):
+        # Test the case where the TMDB API key is not set
+        with patch.dict(os.environ, {'TMDB_API_KEY': ''}):
+            rating = get_tmdb_rating("The Matrix")
+
+        self.assertIsNone(rating)
 
     @patch('rating_services.ia')
     def test_get_imdb_rating_success(self, mock_imdb):
@@ -42,7 +61,6 @@ class TestRatingServices(unittest.TestCase):
         # Mock the Rotten Tomatoes page content
         mock_response = Mock()
         mock_response.status_code = 200
-        # The score-board element with the tomatometerscore attribute
         mock_response.content = b'<score-board tomatometerscore="87"></score-board>'
         mock_get.return_value = mock_response
 

@@ -32,9 +32,12 @@ def get_tmdb_rating(movie_title):
     try:
         movie = Movie()
         search = movie.search(movie_title)
-        if search:
-            result = search[0]
-            return result.vote_average
+
+        # The search result is an iterator. Get the first result.
+        first_result = next(iter(search), None)
+
+        if first_result:
+            return first_result.vote_average
     except TMDbException as e:
         print(f"Error fetching from TMDb: {e}")
     return None
